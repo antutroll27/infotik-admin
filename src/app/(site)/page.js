@@ -1,48 +1,65 @@
-"use client"
-import React, { useState, useContext, useEffect } from 'react'
-import { login } from '@/http';
+import React, { useState, useContext, useEffect } from 'react';
 import { Context } from '@/contextapi/ContextProvider';
 import { useRouter } from 'next/navigation';
-import { uploadVideo } from '@/http';
+import { uploadVideo } from '@/http'; // Assuming you have an uploadVideo function in your HTTP utility
 
-
-const page = () => {
-
-  const {setisAuth,isAuth} = useContext(Context);
-
-  const [email, setEmail] = useState();
-  const [password, setPassword] = useState();
+const DashboardPage = () => {
+  const { isAuth } = useContext(Context);
   const router = useRouter();
 
+  const [videoFile, setVideoFile] = useState(null);
+  const [uploading, setUploading] = useState(false);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    const res = await login(email,password);
-    setisAuth(res);
-  }
+  const handleFileChange = (event) => {
+    setVideoFile(event.target.files[0]);
+  };
 
-
- 
-  useEffect(() => {
-    if(isAuth){
-      router.push('/dashboard')
+  const handleUpload = async () => {
+    if (!videoFile) {
+      alert('Please select a video file to upload.');
+      return;
     }
-  },[isAuth])
-  return (
-    <section className='w-full h-screen pt-28 bg-primary'>
-      <div className='max-w-[40rem] mx-auto bg-black rounded-md  p-14'>
-        <form onSubmit={handleSubmit}>
-          <input type='text' className='p-2 px-3 w-full bg-primary text-white  text-sm border-2 rounded-md border-secondary my-3 placeholder:text-gray-400 outline-none' placeholder='Enter your email' value={email} onChange={(e) => setEmail(e.target.value)}/>
-          <input type='text' className='p-2 px-3 w-full bg-primary text-white  text-sm border-2 rounded-md border-secondary my-3 placeholder:text-gray-400 outline-none' placeholder='Enter your password' value={password} onChange={(e) => setPassword(e.target.value)}/>
 
-          <button className='py-2 w-full my-3 text-white bg-gradient-infitik rounded-md'>
-            Login
+    setUploading(true);
+
+    try {
+      // Call your HTTP utility function to upload the video
+      await uploadVideo(videoFile);
+
+      // Handle success
+      alert('Video uploaded successfully!');
+    } catch (error) {
+      // Handle error
+      console.error('Error uploading video:', error);
+      alert('Error uploading video. Please try again.');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!isAuth) {
+      router.push('/login');
+    }
+  }, [isAuth, router]);
+
+  return (
+    <section className="w-full h-screen pt-28 bg-primary">
+      <div className="max-w-[40rem] mx-auto bg-black rounded-md p-14">
+        <h2 className="text-white text-2xl mb-6">Dashboard</h2>
+        <div>
+          <input type="file" onChange={handleFileChange} accept="video/*" />
+          <button
+            className="py-2 w-full my-3 text-white bg-gradient-infitik rounded-md"
+            onClick={handleUpload}
+            disabled={uploading}
+          >
+            {uploading ? 'Uploading...' : 'Upload Video'}
           </button>
-        </form>
-        
+        </div>
       </div>
     </section>
-  )
-}
+  );
+};
 
-export default page
+export default DashboardPage;
